@@ -140,20 +140,15 @@ def contract_same_type(
     scalar_type = _check_tblis_types(a, b, out=out)
     is_trivial = a.size == 0 or b.size == 0
 
-    fallback = False
-
     if scalar_type is None:
         warnings.warn(
             "TBLIS only supports float32, float64, complex64, and complex128. "
             "Types do not match or unsupported type detected. "
-            "Will attempt to fall back to numpy tensordot.",
+            "Will attempt to fall back to numpy einsum.",
             stacklevel=2,
         )
-        fallback = True
-
-    if fallback:
         if alpha != 1.0 or beta != 0.0:
-            msg = "Cannot fall back to numpy tensordot unless alpha = 1.0 and beta = 0.0"
+            msg = "Cannot fall back to numpy einsum unless alpha = 1.0 and beta = 0.0"
             raise ValueError(msg)
         return np.einsum(subscripts, a, b)
 
