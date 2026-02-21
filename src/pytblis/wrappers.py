@@ -150,7 +150,10 @@ def contract_same_type(
         if alpha != 1.0 or beta != 0.0:
             msg = "Cannot fall back to numpy einsum unless alpha = 1.0 and beta = 0.0"
             raise ValueError(msg)
-        return np.einsum(subscripts, a, b)
+        if conja or conjb:
+            msg = "Cannot fall back to numpy einsum unless conja and conjb are False"
+            raise ValueError(msg)
+        return np.einsum(subscripts, a, b, out=out)
 
     subscripts = subscripts.replace(" ", "")
     input_str, subscript_c = subscripts.split("->")
