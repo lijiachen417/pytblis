@@ -3,7 +3,7 @@ from typing import Union
 import numpy as np
 
 from .defaultorder import get_default_array_order
-from .typecheck import _check_strides, _check_tblis_types
+from .typecheck import _check_tblis_types
 from .wrappers import transpose_add
 
 scalar = Union[float, complex]
@@ -42,7 +42,6 @@ def complexify(realpart, imagpart, conj=False, scale=1.0, out=None):
     _check_tblis_types(realpart, imagpart, out=out)
     assert not np.iscomplexobj(realpart), "Inputs must be real arrays."
     assert not np.iscomplexobj(imagpart), "Inputs must be real arrays."
-    input_strides_ok, output_strides_ok = _check_strides(realpart, imagpart, out=out)
     is_trivial = realpart.size == 0 or imagpart.size == 0
     shape = realpart.shape
     ndim = realpart.ndim
@@ -56,8 +55,6 @@ def complexify(realpart, imagpart, conj=False, scale=1.0, out=None):
         return np.asarray(realpart) + np.asarray(imagpart) * 1j
 
     assert out.shape == shape, "Output array must have the same shape as input arrays."
-    assert input_strides_ok, "Input arrays must not have negative strides."
-    assert output_strides_ok, "Output array must not have negative strides."
 
     conj_fac = -1.0 if conj else 1.0
     transpose_add(inds + "->" + inds, realpart, out=out.real, alpha=scale)
