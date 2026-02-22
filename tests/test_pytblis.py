@@ -241,13 +241,12 @@ def build_shapes(string, dimension_dict=None, flip_chars=""):
             dims = [dimension_dict[x] for x in term]
             shapes.append(tuple(dims))
         return tuple(shapes)
-    else:
-        for term in terms:
-            dims = [dimension_dict[x] for x in term]
-            flip = [x in flip_chars for x in term]
-            shape = tuple(dims)
-            shapes.append((shape, flip))
-        return tuple(shapes)
+    for term in terms:
+        dims = [dimension_dict[x] for x in term]
+        flip = [x in flip_chars for x in term]
+        shape = tuple(dims)
+        shapes.append((shape, flip))
+    return tuple(shapes)
 
 
 def build_views(string, dimension_dict=None, dtype=np.float64, rng=None):
@@ -304,6 +303,7 @@ def build_views_multi_type(string, dimension_dict=None, dtypes=None, rng=None):
             views.append(dtype(rng.random()))
     return tuple(views)
 
+
 def build_views_flip_dims(string, dimension_dict=None, flip_chars="", dtype=np.float64, rng=None):
     if rng is None:
         rng = np.random.default_rng(0)
@@ -320,6 +320,7 @@ def build_views_flip_dims(string, dimension_dict=None, flip_chars="", dtype=np.f
         else:
             views.append(dtype(rng.random()))
     return tuple(views)
+
 
 @pytest.mark.parametrize("string", tests)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
