@@ -228,17 +228,26 @@ _valid_chars = "abcdefghijklmnopqABCZ" + _no_collision_chars
 _default_dim_dict = dict(zip(_valid_chars, _sizes))
 
 
-def build_shapes(string, dimension_dict=None):
+def build_shapes(string, dimension_dict=None, flip_chars=''):
     if dimension_dict is None:
         dimension_dict = _default_dim_dict
 
     shapes = []
     string = string.replace(" ", "")
     terms = string.split("->")[0].split(",")
-    for term in terms:
-        dims = [dimension_dict[x] for x in term]
-        shapes.append(tuple(dims))
-    return tuple(shapes)
+
+    if flip_chars == '':
+        for term in terms:
+            dims = [dimension_dict[x] for x in term]
+            shapes.append(tuple(dims))
+        return tuple(shapes)
+    else:
+        for term in terms:
+            dims = [dimension_dict[x] for x in term]
+            flip = [x in flip_chars for x in term]
+            shape = tuple(dims)
+            shapes.append((shape, flip))
+        return tuple(shapes)
 
 
 def build_views(string, dimension_dict=None, dtype=np.float64, rng=None):
@@ -295,11 +304,37 @@ def build_views_multi_type(string, dimension_dict=None, dtypes=None, rng=None):
             views.append(dtype(rng.random()))
     return tuple(views)
 
+def build_views_flip_dims(string, dimension_dict=None, flip_chars='', dtype=np.float64, rng=None):
+    if rng is None:
+        rng = np.random.default_rng(0)
+    views = []
+    for shape, flip in build_shapes(string, dimension_dict=dimension_dict, flip_chars=flip_chars):
+        if shape:
+            arr = rng.random(shape).astype(dtype)
+            if np.iscomplexobj(arr):
+                arr += 1j * rng.random(shape).astype(dtype)
+            for i, f in enumerate(flip):
+                if f:
+                    arr = np.flip(arr, axis=i)
+            views.append(arr)
+        else:
+            views.append(dtype(rng.random()))
+    return tuple(views)
 
 @pytest.mark.parametrize("string", tests)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_einsum(string, dtype):
     views = build_views(string, dtype=dtype)
+    tblis_result = pytblis.einsum(string, *views)
+    numpy_result = np.einsum(string, *views)
+    assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
+    assert np.allclose(tblis_result, numpy_result), f"Failed for string: {string}"
+
+
+@pytest.mark.parametrize("string", tests)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_einsum_negative_strides(string, dtype):
+    views = build_views_flip_dims(string, dtype=dtype, flip_chars='ab')
     tblis_result = pytblis.einsum(string, *views)
     numpy_result = np.einsum(string, *views)
     assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
