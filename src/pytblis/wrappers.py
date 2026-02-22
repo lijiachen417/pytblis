@@ -6,7 +6,7 @@ import numpy.typing as npt
 
 from ._pytblis_impl import add, mult, shift
 from .defaultorder import get_default_array_order
-from .typecheck import _accepted_types, _check_strides, _check_tblis_types, _valid_labels, contraction_result_shape
+from .typecheck import _accepted_types, _check_tblis_types, _valid_labels, contraction_result_shape
 
 scalar = Union[float, complex]
 
@@ -58,20 +58,12 @@ def transpose_add(
     """
     a = np.asarray(a)
     scalar_type = _check_tblis_types(a, out) if out is not None else _check_tblis_types(a)
-    input_strides_ok, output_strides_ok = _check_strides(a, out=out)
 
     if scalar_type is None:
         raise TypeError(
             "TBLIS only supports float32, float64, complex64, and complex128. "
             "Types do not match or unsupported type detected. "
         )
-    # It's okay if A has bad strides if its size is 0, because nothing will be read.
-    if not input_strides_ok and a.size != 0:
-        msg = f"Input tensor of shape {a.shape} has non-positive strides: {a.strides}"
-        raise ValueError(msg)
-    if not output_strides_ok and out.size != 0:
-        msg = f"Output tensor of shape {out.shape} has non-positive strides: {out.strides}"
-        raise ValueError(msg)
 
     subscripts = subscripts.replace(" ", "")
     a_idx, b_idx = subscripts.split("->")
@@ -146,41 +138,22 @@ def contract_same_type(
     a = np.asarray(a)
     b = np.asarray(b)
     scalar_type = _check_tblis_types(a, b, out=out)
-    input_strides_ok, output_strides_ok = _check_strides(a, b, out=out)
     is_trivial = a.size == 0 or b.size == 0
-
-    fallback = False
 
     if scalar_type is None:
         warnings.warn(
             "TBLIS only supports float32, float64, complex64, and complex128. "
             "Types do not match or unsupported type detected. "
-            "Will attempt to fall back to numpy tensordot.",
+            "Will attempt to fall back to numpy einsum.",
             stacklevel=2,
         )
-        fallback = True
-    if not output_strides_ok and not is_trivial:
-        warnings.warn(
-            f"Output tensor of shape {out.shape} has non-positive strides: {out.strides}. "
-            "Will attempt to fall back to numpy tensordot.",
-            stacklevel=2,
-        )
-        fallback = True
-
-    if not input_strides_ok and not is_trivial:
-        warnings.warn(
-            f"Input tensors of shape {a.shape}/{b.shape} have non-positive "
-            f"strides: {a.strides}/{b.strides}. "
-            "Will attempt to fall back to numpy tensordot.",
-            stacklevel=2,
-        )
-        fallback = True
-
-    if fallback:
         if alpha != 1.0 or beta != 0.0:
-            msg = "Cannot fall back to numpy tensordot unless alpha = 1.0 and beta = 0.0"
+            msg = "Cannot fall back to numpy einsum unless alpha = 1.0 and beta = 0.0"
             raise ValueError(msg)
-        return np.einsum(subscripts, a, b)
+        if conja or conjb:
+            msg = "Cannot fall back to numpy einsum unless conja and conjb are False"
+            raise ValueError(msg)
+        return np.einsum(subscripts, a, b, out=out)
 
     subscripts = subscripts.replace(" ", "")
     input_str, subscript_c = subscripts.split("->")
@@ -432,13 +405,6 @@ def ascontiguousarray(a):
     if a.flags.c_contiguous:
         return a
 
-    if not _check_strides(a):
-        warnings.warn(
-            f"Input tensor of shape {a.shape} has non-positive strides: {a.strides}. Falling back to numpy ascontiguousarray.",
-            stacklevel=2,
-        )
-        return np.ascontiguousarray(a)
-
     if a.dtype.type not in _accepted_types:
         warnings.warn(
             "TBLIS only supports float32, float64, complex64, and complex128. Falling back to numpy ascontiguousarray.",
@@ -472,13 +438,6 @@ def asfortranarray(a):
     a = np.asarray(a)
     if a.flags.f_contiguous:
         return a
-
-    if not _check_strides(a):
-        warnings.warn(
-            f"Input tensor of shape {a.shape} has non-positive strides: {a.strides}. Falling back to numpy asfortranarray.",
-            stacklevel=2,
-        )
-        return np.asfortranarray(a)
 
     if a.dtype.type not in _accepted_types:
         warnings.warn(
