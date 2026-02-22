@@ -228,7 +228,7 @@ _valid_chars = "abcdefghijklmnopqABCZ" + _no_collision_chars
 _default_dim_dict = dict(zip(_valid_chars, _sizes))
 
 
-def build_shapes(string, dimension_dict=None, flip_chars=''):
+def build_shapes(string, dimension_dict=None, flip_chars=""):
     if dimension_dict is None:
         dimension_dict = _default_dim_dict
 
@@ -236,7 +236,7 @@ def build_shapes(string, dimension_dict=None, flip_chars=''):
     string = string.replace(" ", "")
     terms = string.split("->")[0].split(",")
 
-    if flip_chars == '':
+    if flip_chars == "":
         for term in terms:
             dims = [dimension_dict[x] for x in term]
             shapes.append(tuple(dims))
@@ -304,7 +304,7 @@ def build_views_multi_type(string, dimension_dict=None, dtypes=None, rng=None):
             views.append(dtype(rng.random()))
     return tuple(views)
 
-def build_views_flip_dims(string, dimension_dict=None, flip_chars='', dtype=np.float64, rng=None):
+def build_views_flip_dims(string, dimension_dict=None, flip_chars="", dtype=np.float64, rng=None):
     if rng is None:
         rng = np.random.default_rng(0)
     views = []
@@ -334,7 +334,7 @@ def test_einsum(string, dtype):
 @pytest.mark.parametrize("string", tests)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_einsum_negative_strides(string, dtype):
-    views = build_views_flip_dims(string, dtype=dtype, flip_chars='ab')
+    views = build_views_flip_dims(string, dtype=dtype, flip_chars="ab")
     tblis_result = pytblis.einsum(string, *views)
     numpy_result = np.einsum(string, *views)
     assert tblis_result.shape == numpy_result.shape, f"Shape mismatch for string: {string}"
