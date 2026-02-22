@@ -82,10 +82,6 @@ Some additional documentation (work in progress) is available at
 Supported datatypes: `np.float32`, `np.float64`, `np.complex64`,
 `np.complex128`. Mixing arrays of different precisions isn't yet supported.
 
-Arrays with negative or zero stride are not supported and will cause pytblis to
-fall back to NumPy (for `einsum` and `contract`) or raise an error (all other
-functions).
-
 ## New features
 
 ### Mixed-complex/real contractions
