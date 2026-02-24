@@ -40,8 +40,7 @@ So we copy the implementation here.
 import itertools
 import operator
 
-from numpy._core.numeric import asanyarray
-from numpy._core.overrides import array_function_dispatch
+from numpy import asanyarray
 
 # importing string for string.ascii_letters would be too slow
 # the first import before caching has been measured to take 800 µs (#23777)
@@ -651,17 +650,6 @@ def _parse_einsum_input(operands):
     return (input_subscripts, output_subscript, operands)
 
 
-def _einsum_path_dispatcher(*operands, optimize=None, einsum_call=None):
-    # NOTE: technically, we should only dispatch on array-like arguments, not
-    # subscripts (given as strings). But separating operands into
-    # arrays/subscripts is a little tricky/slow (given einsum's two supported
-    # signatures), so as a practical shortcut we dispatch on everything.
-    # Strings will be ignored for dispatching since they don't define
-    # __array_function__.
-    return operands
-
-
-@array_function_dispatch(_einsum_path_dispatcher, module='numpy')
 def einsum_path(*operands, optimize='greedy', einsum_call=False):
     """
     einsum_path(subscripts, *operands, optimize='greedy')
