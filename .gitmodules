@@ -1,3 +1,4 @@
 [submodule "tblis"]
 	path = tblis
-	url = https://github.com/MatthewsResearchGroup/tblis.git
+	url = https://github.com/chillenb/tblis.git
+	branch = update-blis
