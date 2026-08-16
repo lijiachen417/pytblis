@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 # Convenient way to get a development installation
+set -euo pipefail
+
 
 NCPUS=$(nproc)
 
