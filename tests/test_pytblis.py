@@ -47,6 +47,15 @@ def random_array(shape, scalar_type, rng=None):
     return arr.astype(scalar_type)
 
 
+def _read_only_diagonal(shape):
+    base_shape = (*shape, shape[-1])
+    arr = np.arange(np.prod(base_shape), dtype=np.float64).reshape(base_shape)
+    diagonal = np.diagonal(arr, axis1=-2, axis2=-1)
+    assert diagonal.shape == shape
+    assert not diagonal.flags.writeable
+    return diagonal
+
+
 def test_pytblis_imported():
     """Sample test, will always pass so long as import statement worked."""
     assert "pytblis" in sys.modules
@@ -88,6 +97,70 @@ def test_tensordot(scalar_type):
     C = pytblis.tensordot(A, B, axes=2)
     C_correct = np.tensordot(A, B, axes=2)
     assert np.allclose(C, C_correct)
+
+
+def test_transpose_add_read_only_input():
+    a = _read_only_diagonal((4,))
+    a_before = a.copy()
+    expected = np.einsum("i->i", a).copy()
+
+    result = pytblis.transpose_add("i->i", a)
+
+    np.testing.assert_allclose(result, expected)
+    np.testing.assert_allclose(a, a_before)
+
+
+def test_einsum_read_only_inputs():
+    a = _read_only_diagonal((2, 3))
+    b = _read_only_diagonal((3, 4))
+    a_before = a.copy()
+    b_before = b.copy()
+    expected = np.einsum("ij,jk->ik", a, b)
+
+    result = pytblis.einsum("ij,jk->ik", a, b)
+
+    np.testing.assert_allclose(result, expected)
+    np.testing.assert_allclose(a, a_before)
+    np.testing.assert_allclose(b, b_before)
+
+
+def test_tensordot_read_only_inputs():
+    a = _read_only_diagonal((2, 3))
+    b = _read_only_diagonal((3, 4))
+    a_before = a.copy()
+    b_before = b.copy()
+    expected = np.tensordot(a, b, axes=1)
+
+    result = pytblis.tensordot(a, b, axes=1)
+
+    np.testing.assert_allclose(result, expected)
+    np.testing.assert_allclose(a, a_before)
+    np.testing.assert_allclose(b, b_before)
+
+
+def test_dot_read_only_inputs():
+    a = _read_only_diagonal((4,))
+    b = _read_only_diagonal((4,))
+    a_before = a.copy()
+    b_before = b.copy()
+    expected = np.dot(a, b)
+
+    result = pytblis.dot(a, b, "i", "i")
+
+    np.testing.assert_allclose(result, expected)
+    np.testing.assert_allclose(a, a_before)
+    np.testing.assert_allclose(b, b_before)
+
+
+def test_reduce_read_only_input():
+    a = _read_only_diagonal((4,))
+    a_before = a.copy()
+    expected = np.sum(a)
+
+    result = pytblis.reduce(a, "i", pytblis.reduce_t.REDUCE_SUM)
+
+    np.testing.assert_allclose(result, expected)
+    np.testing.assert_allclose(a, a_before)
 
 
 def test_tensordot_type_mixed():
