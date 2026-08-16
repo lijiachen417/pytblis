@@ -49,7 +49,8 @@ static label_vector string_to_label_vector(const std::string &str) { return labe
 // convert a nanobind ndarray to a tblis_tensor.
 // allocates len and stride arrays. these must be freed using tblis_tensor_free_lenstride.
 template <typename... Args>
-static tblis_tensor ndarray_to_scaled_tblis_tensor(const nb::ndarray<Args...> &arr, dcomplex scalar = 1.0, bool conj = false) {
+static tblis_tensor ndarray_to_scaled_tblis_tensor(const nb::ndarray<Args...> &arr, dcomplex scalar = 1.0,
+                                                   bool conj = false) {
   tblis_tensor tensor;
   len_type *len = new len_type[arr.ndim()];
   stride_type *stride = new stride_type[arr.ndim()];
