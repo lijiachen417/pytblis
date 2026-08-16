@@ -48,7 +48,8 @@ static label_vector string_to_label_vector(const std::string &str) { return labe
 
 // convert a nanobind ndarray to a tblis_tensor.
 // allocates len and stride arrays. these must be freed using tblis_tensor_free_lenstride.
-static tblis_tensor ndarray_to_scaled_tblis_tensor(const nb::ndarray<> &arr, dcomplex scalar = 1.0, bool conj = false) {
+template <typename... Args>
+static tblis_tensor ndarray_to_scaled_tblis_tensor(const nb::ndarray<Args...> &arr, dcomplex scalar = 1.0, bool conj = false) {
   tblis_tensor tensor;
   len_type *len = new len_type[arr.ndim()];
   stride_type *stride = new stride_type[arr.ndim()];
@@ -99,7 +100,7 @@ NB_MODULE(_pytblis_impl, m) {
   m.doc() = "Python bindings for TBLIS";
   m.def(
       "add",
-      [](const nb::ndarray<> &A, nb::ndarray<> &B, std::string idx_A, std::string idx_B, dcomplex alpha = 1.0,
+      [](const nb::ndarray<nb::ro> &A, nb::ndarray<> &B, std::string idx_A, std::string idx_B, dcomplex alpha = 1.0,
          dcomplex beta = 1.0, bool conja = false, bool conjb = false) {
         tblis_tensor a = ndarray_to_scaled_tblis_tensor(A, alpha, conja);
         tblis_tensor b = ndarray_to_scaled_tblis_tensor(B, beta, conjb);
@@ -140,7 +141,7 @@ NB_MODULE(_pytblis_impl, m) {
 
   m.def(
       "dot",
-      [](const nb::ndarray<> &A, const nb::ndarray<> &B, const std::string &idx_A, const std::string &idx_B,
+      [](const nb::ndarray<nb::ro> &A, const nb::ndarray<nb::ro> &B, const std::string &idx_A, const std::string &idx_B,
          dcomplex alpha = 1.0, dcomplex beta = 1.0, bool conja = false, bool conjb = false) {
         tblis_tensor a = ndarray_to_scaled_tblis_tensor(A, alpha, conja);
         tblis_tensor b = ndarray_to_scaled_tblis_tensor(B, beta, conjb);
@@ -199,7 +200,7 @@ NB_MODULE(_pytblis_impl, m) {
 
   m.def(
       "mult",
-      [](const nb::ndarray<> &A, const nb::ndarray<> &B, nb::ndarray<> &C, const std::string &idx_A,
+      [](const nb::ndarray<nb::ro> &A, const nb::ndarray<nb::ro> &B, nb::ndarray<> &C, const std::string &idx_A,
          const std::string &idx_B, const std::string &idx_C, dcomplex alpha = 1.0, dcomplex beta = 0.0,
          bool conja = false, bool conjb = false) {
         // alpha is the product of the scalars of A and B
@@ -277,7 +278,7 @@ NB_MODULE(_pytblis_impl, m) {
 
   m.def(
       "reduce",
-      [](const nb::ndarray<> &A, const std::string &idx_A, reduce_t op, bool conja = false) -> nb::object {
+      [](const nb::ndarray<nb::ro> &A, const std::string &idx_A, reduce_t op, bool conja = false) -> nb::object {
         tblis_tensor a = ndarray_to_scaled_tblis_tensor(A, 1.0, false);
         label_vector idx_A_vec = string_to_label_vector(idx_A);
         tblis_scalar result(0.0, 0.0);
